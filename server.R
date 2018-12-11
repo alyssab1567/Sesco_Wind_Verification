@@ -181,7 +181,7 @@ ercot_all <- data3tier_sum %>%
 
 #----------------------------------------------------------------------------------
 
-setwd("C:/R Projects/Sesco_Wind_Verification")
+# setwd("C:/R Projects/Sesco_Wind_Verification")
 
 server <- function(input, output, session) {
  
