@@ -12,6 +12,8 @@ library(scales)
 library(DT)
 setwd("P:/")
 
+Sys.setenv("USER" = "sescouser")
+
 #Load data------
 # Load Miso data from excel files
 miso_wind <- list.files("/Weather/Forecasting Tools/Wind/Saved Forecasts/Miso/") %>%
