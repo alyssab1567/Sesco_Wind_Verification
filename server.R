@@ -10,13 +10,12 @@ library(geosphere)
 library(tidyr)
 library(scales)
 library(DT)
-setwd("P:/")
 
 Sys.setenv("USER" = "sescouser")
 
 #Load data------
 # Load Miso data from excel files
-miso_wind <- list.files("/Weather/Forecasting Tools/Wind/Saved Forecasts/Miso/") %>%
+miso_wind <- list.files("Z://MISO_wind/Miso/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -28,7 +27,7 @@ for(i in 1:length(miso_wind)) {
   date <- paste(substr(miso_wind[i], 19, 20),substr(miso_wind[i], 15, 16), sep = "-")
   date <- paste(date, substr(miso_wind[i], 17, 18), sep = "-")
   date <- paste0("20", date)
-  x <- read_excel(sprintf("/Weather/Forecasting Tools/Wind/Saved Forecasts/Miso/%s", miso_wind[i]) ,sheet = 2, 
+  x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2, 
                   range = "B2:J26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", miso_wind[i]))]] <- x
@@ -61,7 +60,7 @@ colnames(windmiso_actuals)[colnames(windmiso_actuals) == "3 Tier"] <- "vaisala"
 #----------------------------------------------------
 
 #Load SPP data
-SPP_wind <- list.files("/Weather/Forecasting Tools/Wind/Saved Forecasts/SPP/") %>%
+SPP_wind <- list.files("Z://SPP_Wind/SPP/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -73,7 +72,7 @@ for(i in 1:length(SPP_wind)) {
   date <- paste(substr(SPP_wind[i], 18, 19),substr(SPP_wind[i], 14, 15), sep = "-")
   date <- paste(date, substr(SPP_wind[i], 16, 17), sep = "-")
   date <- paste0("20", date)
-  x <- read_excel(sprintf("/Weather/Forecasting Tools/Wind/Saved Forecasts/SPP/%s", SPP_wind[i]) ,sheet = 2, 
+  x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2, 
                   range = "B2:K26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", SPP_wind[i]))]] <- x
@@ -106,7 +105,7 @@ SPP_actuals <- SPP_verification %>%
 SPP_all <- left_join(Wind_forecasts, SPP_actuals) %>%
   group_by(date) %>%
   gather(type,mw,-date)
-  #filter(date>(start) & date<end)
+#filter(date>(start) & date<end)
 #-------------------------------------------------------------------------------------
 #SPP data manipulation
 colnames(Wind_forecasts)[colnames(Wind_forecasts) == "3 Tier"] <- "vaisala"
@@ -118,7 +117,7 @@ colnames(Wind_forecasts)[colnames(Wind_forecasts) == "3 Tier"] <- "vaisala"
 
 # Ercot Actuals Pull ------------------------------------------------------
 # Get ercot actuals (verification)
-ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12"), end = today(), hourly = "yes", return_sql = F) %>% 
+ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = today() , hourly = "yes", return_sql = F) %>% 
   select(-c(REGIONORZONEID)) %>%
   mutate(date = date + hours(1))
 
@@ -126,7 +125,7 @@ colnames(ercot_actuals)[colnames(ercot_actuals) == "MW"] <- "Actuals"
 
 
 #Load Next Day files in
-ercot_nextday <- list.files("P://Weather/ERCOT Wind/Saved Forecasts/Next Day/") %>%
+ercot_nextday <- list.files("Z://ERCOT_Wind/Next Day/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -136,8 +135,8 @@ output <- list()
 for(i in 1:length(ercot_nextday)) {
   #print(i)
   date <- substr(ercot_nextday[i], 10, 19)
-  x <- read.xlsx(sprintf("P://Weather/ERCOT Wind/Saved Forecasts/Next Day/%s", ercot_nextday[i]),sheetIndex = 1, 
-                 startRow = 1, endRow = 26, colIndex = 1:4) %>% 
+  x <- read.xlsx(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1, 
+                 startRow = 1, endRow = 25, colIndex = 1:4) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", ercot_nextday[i]))]] <- x
 }
@@ -178,90 +177,89 @@ ercot_all <- data3tier_sum %>%
   left_join(.,E_nxtdaywnd) %>% 
   left_join(., ercot_actuals) %>% 
   gather(type,mw,-date)
-  #filter(date>(start+1) & date<end)
+#filter(date>(start+1) & date<end)
 
 
 #----------------------------------------------------------------------------------
 
-# setwd("C:/R Projects/Sesco_Wind_Verification")
-
 server <- function(input, output, session) {
- 
-#MISO reactive data ------------------------------------------------------------------  
-   selected_data_miso <- reactive({
+  
+  #MISO reactive data ------------------------------------------------------------------  
+  selected_data_miso <- reactive({
     req(input$dateRange)
     validate(need(!is.na(input$dateRange[1]) & !is.na(input$dateRange[2]), "Error: Please provide both a start and an end date."))
     validate(need(input$dateRange[1] < input$dateRange[2], "Error: Start date should be earlier than end date."))
     miso_all%>%
       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_data_misoview <- reactive({
-     miso_actuals%>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_windmiso_actuals <- reactive({
-     windmiso_actuals%>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   miso_actuals_table <- reactive({
-     miso_actuals%>%
-       mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
-       filter(date >= as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2]))
-   })
-
-   
-#SPP reactive data ----------------------------------------------------------------------
-   selected_data_spp <- reactive({
-     req(input$dateRange)
-     validate(need(!is.na(input$dateRange[1]) & !is.na(input$dateRange[2]), "Error: Please provide both a start and an end date."))
-     validate(need(input$dateRange[1] < input$dateRange[2], "Error: Start date should be earlier than end date."))
-     SPP_all%>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_data_sppview <- reactive({
-     SPP_actuals %>% 
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_wind_forecasts <- reactive({
-     Wind_forecasts%>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   SPP_actuals_table <- reactive({
-     SPP_actuals%>%
-       mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
-       filter(date >= as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2]))
-   })
-   
-   
-#ERCOT reactive data calls---------------------------------------------------------------  
-   #date > as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2])
-   selected_data_ercot <-reactive({
-     req(input$dateRange)
-     validate(need(!is.na(input$dateRange[1]) & !is.na(input$dateRange[2]), "Error: Please provide both a start and an end date."))
-     validate(need(input$dateRange[1] < input$dateRange[2], "Error: Start date should be earlier than end date."))
-     ercot_all%>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_ercot_actuals <- reactive({
-     ercot_actuals %>% 
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_E_nxtdaywnd <- reactive({
-     E_nxtdaywnd %>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   selected_data3tier_sum <- reactive({
-     data3tier_sum %>%
-       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
-   })
-   ercot_actuals_table <- reactive({
-     ercot_actuals%>%
-       mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
-       filter(date >= as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2]))
-   })
-   
-   
-#Output for Miso tab ---------------------------------------------------------------------
+  })
+  selected_data_misoview <- reactive({
+    miso_actuals%>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_windmiso_actuals <- reactive({
+    windmiso_actuals%>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  miso_actuals_table <- reactive({
+    miso_actuals%>%
+      mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
+      filter(date >= as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2]))
+  })
+  
+  
+  #SPP reactive data ----------------------------------------------------------------------
+  selected_data_spp <- reactive({
+    req(input$dateRange)
+    validate(need(!is.na(input$dateRange[1]) & !is.na(input$dateRange[2]), "Error: Please provide both a start and an end date."))
+    validate(need(input$dateRange[1] < input$dateRange[2], "Error: Start date should be earlier than end date."))
+    SPP_all%>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_data_sppview <- reactive({
+    SPP_actuals %>% 
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_wind_forecasts <- reactive({
+    Wind_forecasts%>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  SPP_actuals_table <- reactive({
+    SPP_actuals%>%
+      mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
+      filter(date >= as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2]))
+  })
+  
+  
+  #ERCOT reactive data calls---------------------------------------------------------------  
+  #date > as.POSIXct(input$dateRange[1]) & date < as.POSIXct(input$dateRange[2])
+  selected_data_ercot <-reactive({
+    req(input$dateRange)
+    validate(need(!is.na(input$dateRange[1]) & !is.na(input$dateRange[2]), "Error: Please provide both a start and an end date."))
+    validate(need(input$dateRange[1] < input$dateRange[2], "Error: Start date should be earlier than end date."))
+    ercot_all%>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_ercot_actuals <- reactive({
+    ercot_actuals %>% 
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_E_nxtdaywnd <- reactive({
+    E_nxtdaywnd %>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  selected_data3tier_sum <- reactive({
+    data3tier_sum %>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
+  })
+  ercot_actuals_table <- reactive({
+    ercot_actuals%>%
+      mutate_at(vars("Actuals"), funs(round(., digits = 1))) %>%
+      filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])%>%
+      mutate(date = date - hours(6))
+  })
+  
+  
+  #Output for Miso tab ---------------------------------------------------------------------
   output$MISO <- renderPlot({
     
     ggplot(selected_data_miso(), aes(date,mw,col=type)) + geom_line(size=1)
@@ -351,31 +349,31 @@ server <- function(input, output, session) {
     
   })
   output$sppmae <- renderPlot({
-      SPP_MAE <- left_join(selected_wind_forecasts(), selected_data_sppview()) %>% 
-        group_by(date) %>% 
-        mutate('3 Tier' = abs(Actuals - vaisala),
-               Sesco = abs(Actuals - Sesco),
-               WSI = abs(Actuals - WSI),
-               SPP = abs(Actuals - SPP)) %>%  
-        select(date, Sesco, '3 Tier', WSI, SPP) %>% 
-        gather(type,mw,-date) %>% 
-        #filter(date>start & date<end) %>% 
-        filter(!is.na(mw)) %>% 
-        mutate(hourgroups = case_when(hour(date) %in% c(0:5)~"1: Early AM (0-5)",
-                                      hour(date) %in% c(6:10)~"2: Morning (6-10)",
-                                      hour(date) %in% c(11:13)~"3: Mid-day (11-13)",
-                                      hour(date) %in% c(14:19)~"4: Peak (14-19)",
-                                      hour(date) %in% c(20:23)~"5: Late PM (20-23)")) %>% 
-        # group_by(type) %>% 
-        # summarise(MAE = mean(mw)) %>% 
-        identity()
-      
-      daytimegraph <- aggregate(SPP_MAE[,3], list(time = SPP_MAE$hourgroups, type = SPP_MAE$type), mean)
-      
-      ggplot(daytimegraph,aes(type, mw, fill=type)) +
-        geom_col() +
-        facet_wrap(~time) +
-        ggtitle("SPP - Mean Absolute Error of time blocks")
+    SPP_MAE <- left_join(selected_wind_forecasts(), selected_data_sppview()) %>% 
+      group_by(date) %>% 
+      mutate('3 Tier' = abs(Actuals - vaisala),
+             Sesco = abs(Actuals - Sesco),
+             WSI = abs(Actuals - WSI),
+             SPP = abs(Actuals - SPP)) %>%  
+      select(date, Sesco, '3 Tier', WSI, SPP) %>% 
+      gather(type,mw,-date) %>% 
+      #filter(date>start & date<end) %>% 
+      filter(!is.na(mw)) %>% 
+      mutate(hourgroups = case_when(hour(date) %in% c(0:5)~"1: Early AM (0-5)",
+                                    hour(date) %in% c(6:10)~"2: Morning (6-10)",
+                                    hour(date) %in% c(11:13)~"3: Mid-day (11-13)",
+                                    hour(date) %in% c(14:19)~"4: Peak (14-19)",
+                                    hour(date) %in% c(20:23)~"5: Late PM (20-23)")) %>% 
+      # group_by(type) %>% 
+      # summarise(MAE = mean(mw)) %>% 
+      identity()
+    
+    daytimegraph <- aggregate(SPP_MAE[,3], list(time = SPP_MAE$hourgroups, type = SPP_MAE$type), mean)
+    
+    ggplot(daytimegraph,aes(type, mw, fill=type)) +
+      geom_col() +
+      facet_wrap(~time) +
+      ggtitle("SPP - Mean Absolute Error of time blocks")
   })
   output$viewspp <- DT::renderDataTable({
     DT::datatable(SPP_actuals_table())
