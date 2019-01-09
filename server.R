@@ -184,6 +184,10 @@ ercot_all <- data3tier_sum %>%
 
 server <- function(input, output, session) {
   
+  observe({
+    updateDateRangeInput(session, "dateRange", start = as.Date(input$client_time) - days(1), end = as.Date(input$client_time), max = as.Date(input$client_time))
+  })
+  
   #MISO reactive data ------------------------------------------------------------------  
   selected_data_miso <- reactive({
     req(input$dateRange)

@@ -7,9 +7,17 @@ ui <- navbarPage(
   "Wind Verification",
       fluidPage(
         
+        HTML('<input type="text" id="client_time" name="client_time" style="display: none;" > '),
+        tags$script('
+                                          $(function() {
+                                          var time_now = new Date()
+                                          var month_now=time_now.getMonth()+1
+                                          $("input#client_time").val(time_now.getFullYear()+"-"+month_now+"-"+time_now.getDate())
+                                          });
+                                          '),
+        
              sidebarPanel(width = 2,
-                          dateRangeInput(inputId = "dateRange", label = 'Date Range:', start = today() - days(1), 
-                                         end = today(), min = ymd('2017-08-01'), max = today())
+                          dateRangeInput(inputId = "dateRange", label = 'Date Range:', min = ymd('2017-08-01'))
                           #actionButton("go", "Plot")
                           #selectInput('iso', "Choose ISO", choice = c("MISO", "SPP", "ERCOT"), 
                                       #selected = "MISO", multiple = F)
