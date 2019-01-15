@@ -17,22 +17,25 @@ ui <- navbarPage(
                                           '),
         
              sidebarPanel(width = 2,
-                          dateRangeInput(inputId = "dateRange", label = 'Date Range:', min = ymd('2017-08-01'))
-                          #actionButton("go", "Plot")
+                          dateRangeInput(inputId = "dateRange", label = 'Date Range:', min = ymd('2018-02-11')),
+                          submitButton("Plot", icon("refresh"))
                           #selectInput('iso', "Choose ISO", choice = c("MISO", "SPP", "ERCOT"), 
                                       #selected = "MISO", multiple = F)
                           ),
              mainPanel(
                  tabsetPanel(type = "tabs",
-                             tabPanel("ERCOT", plotOutput("ERCOT"), verbatimTextOutput("summaryercot"),
-                                      plotOutput("ercotmae"), DT::dataTableOutput("viewercot") %>% 
-                                        withSpinner(color="#0dc5c1")),
-                             tabPanel("MISO", plotOutput("MISO"), verbatimTextOutput("summarymiso"),  
-                                      plotOutput("misomae"), DT::dataTableOutput("viewmiso") %>% 
-                                        withSpinner(color="#0dc5c1")),
-                             tabPanel("SPP", plotOutput("SPP"), verbatimTextOutput("summaryspp"), 
-                                      plotOutput("sppmae"), DT::dataTableOutput("viewspp")%>% 
-                                        withSpinner(color="#0dc5c1")))
+                             tabPanel("ERCOT", plotOutput("ERCOT") %>% withSpinner(color="#0dc5c1"), 
+                                      "Mean Absolute Error for selected time period", verbatimTextOutput("summaryercot"),
+                                      plotOutput("ercotmae")),#, #DT::dataTableOutput("viewercot") %>% 
+                                        #withSpinner(color="#0dc5c1")),
+                             tabPanel("MISO", plotOutput("MISO") %>% withSpinner(color="#0dc5c1"), 
+                                      "Mean Absolute Error for selected time period",verbatimTextOutput("summarymiso"),  
+                                      plotOutput("misomae")),#, #DT::dataTableOutput("viewmiso") %>% 
+                                        #withSpinner(color="#0dc5c1")),
+                             tabPanel("SPP", plotOutput("SPP") %>% withSpinner(color="#0dc5c1"), 
+                                      "Mean Absolute Error for selected time period",verbatimTextOutput("summaryspp"), 
+                                      plotOutput("sppmae")))#, #DT::dataTableOutput("viewspp")%>% 
+                                        #withSpinner(color="#0dc5c1")))
                )
              )
            )

@@ -16,6 +16,7 @@ Sys.setenv("USER" = "sescouser")
 #Load data------
 # Load Miso data from excel files
 miso_wind <- list.files("/data/rdata/rdatashare/weather/MISO_wind/Miso/") %>%
+#miso_wind <- list.files("Z://MISO_wind/Miso/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -27,7 +28,8 @@ for(i in 1:length(miso_wind)) {
   date <- paste(substr(miso_wind[i], 19, 20),substr(miso_wind[i], 15, 16), sep = "-")
   date <- paste(date, substr(miso_wind[i], 17, 18), sep = "-")
   date <- paste0("20", date)
-  x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2, 
+  #x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2,
+  x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2,
                   range = "B2:J26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", miso_wind[i]))]] <- x
@@ -39,7 +41,7 @@ windmiso_actuals <- do.call(rbind, output) %>%
   select(date, Sesco, '3 Tier', MDA, WSI)
 
 #Load Miso actual data from SESCO database
-miso_verification <- query_actual_wind_mw(start = ymd('2018-02-11'), end = today(), region_id = 67529, timeZone = "US/Central") %>%
+miso_verification <- query_actual_wind_mw(start = ymd('2018-02-11'), end = max(windmiso_actuals$date, na.rm = TRUE), region_id = 67529, timeZone = "US/Central") %>%
   mutate(date = floor_date(date, "minute"))
 #use this line during day light ssavings time
 #mutate(date = date - hours(1) - seconds(2))
@@ -60,7 +62,8 @@ colnames(windmiso_actuals)[colnames(windmiso_actuals) == "3 Tier"] <- "vaisala"
 #----------------------------------------------------
 
 #Load SPP data
-SPP_wind <- list.files("/data/rdata/rdatashare/weather/SPP_Wind/SPP/") %>%
+#SPP_wind <- list.files("/data/rdata/rdatashare/weather/SPP_Wind/SPP/") %>%
+SPP_wind <- list.files("Z://SPP_Wind/SPP/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -73,6 +76,7 @@ for(i in 1:length(SPP_wind)) {
   date <- paste(date, substr(SPP_wind[i], 16, 17), sep = "-")
   date <- paste0("20", date)
   x <- read_excel(sprintf("/data/rdata/rdatashare/weather/SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2, 
+  #x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2,
                   range = "B2:K26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", SPP_wind[i]))]] <- x
@@ -88,7 +92,7 @@ Wind_forecasts <- do.call(rbind, output) %>%
 # Get MISO actuals (verification)
 
 #I dont think this code has the correct data for SPP but the other SPP code shows no data
-SPP_verification <- query_actual_wind_mw(start = ymd('2018-02-11') , end = today(), region_id = 68, timeZone = "US/Central") %>% 
+SPP_verification <- query_actual_wind_mw(start = ymd('2018-02-11') , end = max(Wind_forecasts$date, na.rm = TRUE), region_id = 68, timeZone = "US/Central") %>% 
   mutate(date = date)
 #use the following line during day light savings time
 #mutate(date = date - hours(1))
@@ -115,17 +119,9 @@ colnames(Wind_forecasts)[colnames(Wind_forecasts) == "3 Tier"] <- "vaisala"
 
 #Load ERCOT Data
 
-# Ercot Actuals Pull ------------------------------------------------------
-# Get ercot actuals (verification)
-ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = today() , hourly = "yes", return_sql = F) %>% 
-  select(-c(REGIONORZONEID)) %>%
-  mutate(date = date + hours(1))
-
-colnames(ercot_actuals)[colnames(ercot_actuals) == "MW"] <- "Actuals"
-
-
 #Load Next Day files in
-ercot_nextday <- list.files("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/") %>%
+#ercot_nextday <- list.files("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/") %>%
+ercot_nextday <- list.files("Z://ERCOT_Wind/Next Day/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -136,6 +132,7 @@ for(i in 1:length(ercot_nextday)) {
   #print(i)
   date <- substr(ercot_nextday[i], 10, 19)
   x <- read.xlsx(sprintf("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1, 
+  #x <- read.xlsx(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1,
                  startRow = 1, endRow = 25, colIndex = 1:4) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", ercot_nextday[i]))]] <- x
@@ -145,6 +142,14 @@ timezones <- data.frame(tz = OlsonNames())
 E_nxtdaywnd <- do.call(rbind, output) %>% 
   mutate(date = ymd_h(paste0(date,":",He),tz = "US/Central") ) %>% 
   select(date, ERCOT, SESCO)
+
+# Ercot Actuals Pull ------------------------------------------------------
+# Get ercot actuals (verification)
+ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = max(E_nxtdaywnd$date, na.rm = TRUE) , hourly = "yes", return_sql = F) %>% 
+  select(-c(REGIONORZONEID)) %>%
+  mutate(date = date + hours(1))
+
+colnames(ercot_actuals)[colnames(ercot_actuals) == "MW"] <- "Actuals"
 
 
 # 3 Tier Data Pull --------------------------------------------------------
@@ -266,7 +271,7 @@ server <- function(input, output, session) {
   #Output for Miso tab ---------------------------------------------------------------------
   output$MISO <- renderPlot({
     
-    ggplot(selected_data_miso(), aes(date,mw,col=type)) + geom_line(size=1)
+    ggplot(selected_data_miso(), aes(date,mw,col=type)) + geom_line(size=1) + ggtitle("Forecast Vs. Actual")
     
   })
   output$summarymiso <- renderPrint({
@@ -318,15 +323,15 @@ server <- function(input, output, session) {
       facet_wrap(~time) +
       ggtitle("MISO - Mean Absolute Error of time blocks")
   })
-  output$viewmiso <- DT::renderDataTable({
-    DT::datatable(miso_actuals_table())
-  })
+  # output$viewmiso <- DT::renderDataTable({
+  #   DT::datatable(miso_actuals_table())
+  # })
   
   
   #Output for SPP tab -------------------------------------------------------------------------------
   output$SPP <- renderPlot({
     
-    ggplot(selected_data_spp(), aes(date,mw,col=type)) + geom_line(size=1)
+    ggplot(selected_data_spp(), aes(date,mw,col=type)) + geom_line(size=1) + ggtitle("Forecast Vs. Actual")
     
   })
   output$summaryspp <- renderPrint({
@@ -379,15 +384,15 @@ server <- function(input, output, session) {
       facet_wrap(~time) +
       ggtitle("SPP - Mean Absolute Error of time blocks")
   })
-  output$viewspp <- DT::renderDataTable({
-    DT::datatable(SPP_actuals_table())
-  })
+  # output$viewspp <- DT::renderDataTable({
+  #   DT::datatable(SPP_actuals_table())
+  # })
   
   
   #Output for ercot tab ---------------------------------------------------------------------------
   output$ERCOT <- renderPlot({
     
-    ggplot(selected_data_ercot(), aes(date,mw,col=type)) + geom_line(size=1)
+    ggplot(selected_data_ercot(), aes(date,mw,col=type)) + geom_line(size=1) + ggtitle("Forecast Vs. Actual")
     
   })
   
@@ -449,8 +454,8 @@ server <- function(input, output, session) {
     
   })
   
-  output$viewercot <- DT::renderDataTable({
-    DT::datatable(ercot_actuals_table())
-  })
+  # output$viewercot <- DT::renderDataTable({
+  #   DT::datatable(ercot_actuals_table())
+  # })
   
 }
