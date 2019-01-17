@@ -11,12 +11,14 @@ library(tidyr)
 library(scales)
 library(DT)
 
+#source("/filepath/datapull.R")
+
 Sys.setenv("USER" = "sescouser")
 
 #Load data------
 # Load Miso data from excel files
 miso_wind <- list.files("/data/rdata/rdatashare/weather/MISO_wind/Miso/") %>%
-#miso_wind <- list.files("Z://MISO_wind/Miso/") %>%
+# miso_wind <- list.files("Z://MISO_wind/Miso/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -29,7 +31,7 @@ for(i in 1:length(miso_wind)) {
   date <- paste(date, substr(miso_wind[i], 17, 18), sep = "-")
   date <- paste0("20", date)
   x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2,
-  #x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2,
+  # x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind[i]) ,sheet = 2,
                   range = "B2:J26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", miso_wind[i]))]] <- x
@@ -63,7 +65,7 @@ colnames(windmiso_actuals)[colnames(windmiso_actuals) == "3 Tier"] <- "vaisala"
 
 #Load SPP data
 SPP_wind <- list.files("/data/rdata/rdatashare/weather/SPP_Wind/SPP/") %>%
-#SPP_wind <- list.files("Z://SPP_Wind/SPP/") %>%
+# SPP_wind <- list.files("Z://SPP_Wind/SPP/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -75,8 +77,8 @@ for(i in 1:length(SPP_wind)) {
   date <- paste(substr(SPP_wind[i], 18, 19),substr(SPP_wind[i], 14, 15), sep = "-")
   date <- paste(date, substr(SPP_wind[i], 16, 17), sep = "-")
   date <- paste0("20", date)
-  x <- read_excel(sprintf("/data/rdata/rdatashare/weather/SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2, 
-  #x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2,
+  x <- read_excel(sprintf("/data/rdata/rdatashare/weather/SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2,
+  # x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", SPP_wind[i]) ,sheet = 2,
                   range = "B2:K26" , col_names = TRUE) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", SPP_wind[i]))]] <- x
@@ -121,7 +123,7 @@ colnames(Wind_forecasts)[colnames(Wind_forecasts) == "3 Tier"] <- "vaisala"
 
 #Load Next Day files in
 ercot_nextday <- list.files("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/") %>%
-#ercot_nextday <- list.files("Z://ERCOT_Wind/Next Day/") %>%
+# ercot_nextday <- list.files("Z://ERCOT_Wind/Next Day/") %>%
   data.frame(files = .) %>%
   filter(grepl(".xlsx", files)) %>%
   pull(.)
@@ -131,8 +133,8 @@ output <- list()
 for(i in 1:length(ercot_nextday)) {
   #print(i)
   date <- substr(ercot_nextday[i], 10, 19)
-  x <- read.xlsx(sprintf("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1, 
-  #x <- read.xlsx(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1,
+  x <- read.xlsx(sprintf("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1,
+  # x <- read.xlsx(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_nextday[i]),sheetIndex = 1,
                  startRow = 1, endRow = 25, colIndex = 1:4) %>% 
     mutate(date = date)
   output[[paste(gsub(".rds" , replacement = "", ercot_nextday[i]))]] <- x
@@ -205,6 +207,8 @@ server <- function(input, output, session) {
     miso_actuals%>%
       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])
   })
+  
+  
   selected_windmiso_actuals <- reactive({
     windmiso_actuals%>%
       filter(date(date) >= input$dateRange[1] & date(date) < input$dateRange[2])

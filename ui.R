@@ -17,7 +17,7 @@ ui <- navbarPage(
                                           '),
         
              sidebarPanel(width = 2,
-                          dateRangeInput(inputId = "dateRange", label = 'Date Range:', min = ymd('2018-02-11')),
+                          dateRangeInput(inputId = "dateRange",start = Sys.Date()-days(1), end = Sys.Date(), label = 'Date Range:', min = ymd('2018-02-11')),
                           submitButton("Plot", icon("refresh"))
                           #selectInput('iso', "Choose ISO", choice = c("MISO", "SPP", "ERCOT"), 
                                       #selected = "MISO", multiple = F)
