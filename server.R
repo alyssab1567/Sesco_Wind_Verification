@@ -148,7 +148,9 @@ server <- function(input, output, session) {
   
   #MISO reactive data retrieval from master CSV and check to see if the file is up to date------------------------------------------------------
   #read in latest csvs
-  latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+  
+  latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+  # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
                             range = cell_cols("A:E") , col_names = TRUE)
   
   windmiso_actuals <- reactive({
@@ -161,7 +163,8 @@ server <- function(input, output, session) {
       repeat{
         min_add = paste(substr(max_date,6,7),substr(max_date,9,10),substr(max_date,3,4), sep = "")
         #add in code that pulls in the file with the string names by min_add and pull that data out similar to the for loop for the giant data pull
-        miso_wind <- list.files("Z://MISO_wind/Miso/", pattern = min_add) %>%
+        miso_wind <- list.files("/data/rdata/rdatashare/weather/MISO_wind/Miso/", pattern = min_add) %>%
+        # miso_wind <- list.files("Z://MISO_wind/Miso/", pattern = min_add) %>%
           data.frame(files = .) %>%
           filter(grepl(".xlsx", files)) %>%
           pull(.)
@@ -169,7 +172,8 @@ server <- function(input, output, session) {
         date <- paste(substr(miso_wind, 19, 20),substr(miso_wind, 15, 16), sep = "-")
         date <- paste(date, substr(miso_wind, 17, 18), sep = "-")
         date <- paste0("20", date)
-        x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind), sheet = 2, 
+        x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind), sheet = 2,
+        # x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind), sheet = 2, 
                         range = "B2:J26" , col_names = TRUE) %>%
           mutate(date = date)
         output[[paste(gsub(".rds" , replacement = "", miso_wind))]] <- x
@@ -192,11 +196,13 @@ server <- function(input, output, session) {
         group_by(date)
       
       #save master csv
-      write_xlsx(windmiso_new, path = "Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx",
+      # write_xlsx(windmiso_new, path = "Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx",
+      write_xlsx(windmiso_new, path = "/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx",
                  col_names = TRUE)#, row.names = FALSE, append = FALSE)
       
       # Load Miso data from master excel file
-      latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+      # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+      latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
                                 range = cell_cols("A:E") , col_names = TRUE)
       
       #changing the time from UTC to US/Central
@@ -211,7 +217,8 @@ server <- function(input, output, session) {
     }else{
       #else take in same file and no modifications needed
       # Load Miso data from master excel file
-      latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+      # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+      latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
                                 range = cell_cols("A:E") , col_names = TRUE)
       
       #Changing the time from UTC to US/Central
@@ -278,7 +285,8 @@ server <- function(input, output, session) {
   
   #SPP reactive data retrieval from master CSV and check to see if the file is up to date-------------------------------------------------------------
   
-  latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+  # latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+  latest_spp <- read_excel("/data/rdata/rdatashare/weather/SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
                                range = cell_cols("A:E") , col_names = TRUE)
   Wind_forecasts <- reactive({
     #check for max date
@@ -290,7 +298,8 @@ server <- function(input, output, session) {
       repeat{
         min_add = paste(substr(max_date,6,7),substr(max_date,9,10),substr(max_date,3,4), sep = "")
         #add in code that pulls in the file with the string names by min_add and pull that data out simiar to the for loop for the giant data pull
-        spp_wind <- list.files("Z://SPP_Wind/SPP/", pattern = min_add) %>%
+        spp_wind <- list.files("/data/rdata/rdatashare/weather/SPP_Wind/SPP/", pattern = min_add) %>%
+        # spp_wind <- list.files("Z://SPP_Wind/SPP/", pattern = min_add) %>%
           data.frame(files = .) %>%
           filter(grepl(".xlsx", files)) %>%
           pull(.)
@@ -298,7 +307,8 @@ server <- function(input, output, session) {
         date <- paste(substr(spp_wind, 18, 19),substr(spp_wind, 14, 15), sep = "-")
         date <- paste(date, substr(spp_wind, 16, 17), sep = "-")
         date <- paste0("20", date)
-        x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", spp_wind), sheet = 2,
+        x <- read_excel(sprintf("/data/rdata/rdatashare/weather/SPP_Wind/SPP/%s", spp_wind), sheet = 2,
+        # x <- read_excel(sprintf("Z://SPP_Wind/SPP/%s", spp_wind), sheet = 2,
                         range = "B2:K26" , col_names = TRUE) %>%
           mutate(date = date)
         output[[paste(gsub(".rds" , replacement = "", spp_wind))]] <- x
@@ -321,10 +331,12 @@ server <- function(input, output, session) {
         group_by(date)
       
       #save master csv
-      write_xlsx(windspp_new, path = "Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx",
+      # write_xlsx(windspp_new, path = "Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx",
+      write_xlsx(windspp_new, path = "/data/rdata/rdatashare/weather/SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx",
                  col_names = TRUE)#, row.names = FALSE, append = FALSE)
       
-      latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+      # latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+      latest_spp <- read_excel("/data/rdata/rdatashare/weather/SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
                                range = cell_cols("A:E") , col_names = TRUE)
       
       Wind_forecasts <- latest_spp %>%
@@ -336,7 +348,8 @@ server <- function(input, output, session) {
       Wind_forecasts <- Wind_forecasts
       
     }else{
-      latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+      # latest_spp <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
+      latest_spp <- read_excel("/data/rdata/rdatashare/weather/SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
                                range = cell_cols("A:E") , col_names = TRUE)
       
       Wind_forecasts <- latest_spp %>%
@@ -397,7 +410,8 @@ server <- function(input, output, session) {
   })
   
   #ERCOT reactive data retrieval from master CSV and check to see if the file is up to date-------------------------------------------------------------
-  latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+  # latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+  latest_ercot <- read_excel("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
                             range = cell_cols("A:C") , col_names = TRUE)
   
   E_nxtdaywnd <- reactive({
@@ -421,13 +435,15 @@ server <- function(input, output, session) {
     repeat{
       min_add = paste(substr(max_date,1,10))
       #add in code that pulls in the file with the string names by min_add and pull that data out simiar to the for loop for the giant data pull
-      ercot_wind <- list.files("Z://ERCOT_Wind/Next Day/", pattern = min_add) %>%
+      ercot_wind <- list.files("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/", pattern = min_add) %>%
+      # ercot_wind <- list.files("Z://ERCOT_Wind/Next Day/", pattern = min_add) %>%
         data.frame(files = .) %>%
         filter(grepl(".xlsx", files)) %>%
         pull(.)
       
       date <- paste0(substr(ercot_wind, 12, 21))
-      x <- read_excel(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_wind), sheet = 1,
+      # x <- read_excel(sprintf("Z://ERCOT_Wind/Next Day/%s", ercot_wind), sheet = 1,
+      x <- read_excel(sprintf("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/%s", ercot_wind), sheet = 1,
                       range = "A1:D25" , col_names = TRUE) %>%
         mutate(date = date)
       output[[paste(gsub(".rds" , replacement = "", ercot_wind))]] <- x
@@ -450,10 +466,12 @@ server <- function(input, output, session) {
       group_by(date)
     
     #save master csv
-    write_xlsx(windercot_new, path = "Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx",
+    # write_xlsx(windercot_new, path = "Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx",
+    write_xlsx(windercot_new, path = "/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx",
                col_names = TRUE)#, row.names = FALSE, append = FALSE)
     
-    latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+    # latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+    latest_ercot <- read_excel("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
                                range = cell_cols("A:C") , col_names = TRUE)
     
     E_nxtdaywnd <- latest_ercot %>%
@@ -463,7 +481,8 @@ server <- function(input, output, session) {
     E_nxtdaywnd <- E_nxtdaywnd
     
   }else{
-    latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+    # latest_ercot <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
+    latest_ercot <- read_excel("/data/rdata/rdatashare/weather/ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
                                range = cell_cols("A:C") , col_names = TRUE)
     
     E_nxtdaywnd <- latest_ercot %>%
