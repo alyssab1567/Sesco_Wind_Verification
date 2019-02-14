@@ -150,14 +150,14 @@ server <- function(input, output, session) {
   #read in latest csvs
   
   latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
-  # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+   # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
                             range = cell_cols("A:E") , col_names = TRUE)
   
   windmiso_actuals <- reactive({
     #check for max date
     max_date = as.Date(format(max(latest_miso$date, na.rm = TRUE), "%Y-%m-%d"))
     
-    if(max_date != as.Date(input$client_time) + days(2)) {
+    if(max_date < as.Date(input$client_time) + days(1)) {
       output <- list()
       
       repeat{
@@ -173,14 +173,14 @@ server <- function(input, output, session) {
         date <- paste(date, substr(miso_wind, 17, 18), sep = "-")
         date <- paste0("20", date)
         x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind), sheet = 2,
-        # x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind), sheet = 2, 
+        # x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind), sheet = 2,
                         range = "B2:J26" , col_names = TRUE) %>%
           mutate(date = date)
         output[[paste(gsub(".rds" , replacement = "", miso_wind))]] <- x
         
         max_date = max_date + days(1)
         
-        if(max_date == as.Date(input$client_time) + days(2)){
+        if(max_date >= as.Date(input$client_time) + days(1)){
           break
         }
       }
@@ -292,7 +292,7 @@ server <- function(input, output, session) {
     #check for max date
     max_date = as.Date(format(max(latest_spp$date, na.rm = TRUE), "%Y-%m-%d"))
     
-    if(max_date != as.Date(input$client_time) + days(2)) {
+    if(max_date < as.Date(input$client_time) + days(1)) {
       output <- list()
       
       repeat{
@@ -315,7 +315,7 @@ server <- function(input, output, session) {
         
         max_date = max_date + days(1)
         
-        if(max_date == as.Date(input$client_time) + days(2)){
+        if(max_date >= as.Date(input$client_time) + days(1)){
           break
         }
       }
@@ -429,7 +429,7 @@ server <- function(input, output, session) {
   #   filter(grepl(".xlsx", files)) %>%
   #   pull(.)
   #
-  if(max_date != as.Date(input$client_time) + days(2)) {
+  if(max_date < as.Date(input$client_time) + days(1)) {
     output <- list()
     
     repeat{
@@ -450,7 +450,7 @@ server <- function(input, output, session) {
       
       max_date = max_date + days(1)
       
-      if(max_date == as.Date(input$client_time) + days(2)){
+      if(max_date >= as.Date(input$client_time) + days(1)){
         break
       }
     }
