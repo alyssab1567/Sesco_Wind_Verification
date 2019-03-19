@@ -14,130 +14,6 @@ library(DT)
 
 Sys.setenv("USER" = "sescouser")
 
-# #Load data------
-# # Load Miso data from master excel file
-# windmiso_actuals <- read_excel("/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
-#                                range = cell_cols("A:E") , col_names = TRUE) 
-# 
-# #windmiso_actuals$date <- as.POSIXct(windmiso_actuals$date, format = "%Y-%m-%d %H:%M:%S")
-# windmiso_actuals <- windmiso_actuals %>%
-#   mutate(date = ymd_hms(date, tz = "US/Central")) %>%
-#   mutate(date = date - hours(6))
-
-
-# #Load Miso actual data from SESCO database
-# miso_verification <- query_actual_wind_mw(start = ymd('2018-02-11'), end = max(windmiso_actuals$date, na.rm = TRUE), region_id = 67529, timeZone = "US/Central") %>%
-#   mutate(date = floor_date(date, "minute"))
-# #use this line during day light savings time
-# #mutate(date = date - hours(1) - seconds(2))
-
-# colnames(miso_verification)[colnames(miso_verification) == "POWERMW"] <- "Actuals"
-# #colnames(miso_verification)[colnames(miso_verification) == "RTO_NAME"] <- "Iso"
-# miso_actuals <- miso_verification %>%
-#   select(date,Actuals)
-# 
-# #Join Miso actuals to the forecasted data
-# miso_all <- left_join(windmiso_actuals, miso_actuals) %>%
-#   group_by(date) %>%
-#   gather(type,mw,-date)
-# #----------------------------------------------------
-# #Miso Data manipulation
-# colnames(windmiso_actuals)[colnames(windmiso_actuals) == "3 Tier"] <- "vaisala"
-
-#----------------------------------------------------
-
-# #Load SPP data
-# Wind_forecasts <- read_excel("Z://SPP_Wind/SPP/Master excel sheet/Master_spp.xlsx", sheet = 1,
-#                              range = cell_cols("A:E") , col_names = TRUE)
-# 
-# #Wind_forecasts$date <- as.POSIXct(Wind_forecasts$date, format = "%Y-%m-%d %H:%M:%S")
-# 
-# Wind_forecasts <- Wind_forecasts %>%
-#   mutate(date = ymd_hms(date, tz = "US/Central")) %>%
-#   mutate(date = date - hours(6))
-# 
-# #SPP Actuals pull------------------------------------------------------
-# # Get SPP actuals (verification)
-# 
-# #I dont think this code has the correct data for SPP but the other SPP code shows no data
-# SPP_verification <- query_actual_wind_mw(start = ymd('2018-02-11') , end = max(Wind_forecasts$date, na.rm = TRUE), region_id = 68, timeZone = "US/Central") %>% 
-#   mutate(date = date)
-# #use the following line during day light savings time
-# #mutate(date = date - hours(1))
-# 
-# colnames(SPP_verification)[colnames(SPP_verification) == "POWERMW"] <- "Actuals"
-# SPP_actuals <- SPP_verification %>%
-#   filter(., grepl(":00:00",date)) %>%
-#   select(date, Actuals)
-# #SPP_actuals <- filter(SPP_actuals, grepl(":00:00", date))
-# 
-# 
-# #Join tables -------------------------------------------------------------
-# #Join the data together
-# SPP_all <- left_join(Wind_forecasts, SPP_actuals) %>%
-#   group_by(date) %>%
-#   gather(type,mw,-date)
-# #filter(date>(start) & date<end)
-# #-------------------------------------------------------------------------------------
-# #SPP data manipulation
-# colnames(Wind_forecasts)[colnames(Wind_forecasts) == "3 Tier"] <- "vaisala"
-
-
-
-
-#Load ERCOT Data
-
-#Load Next Day files in
-# E_nxtdaywnd <- read_excel("Z://ERCOT_Wind/Next Day/Master excel sheet/Master_ercot.xlsx", sheet = 1,
-#                           range = cell_cols("A:C") , col_names = TRUE)
-# 
-# #E_nxtdaywnd$date <- as.POSIXct(E_nxtdaywnd$date, format = "%Y-%m-%d %H:%M:%S")
-# E_nxtdaywnd <- E_nxtdaywnd %>%
-#   mutate(date = ymd_hms(date, tz = "US/Central")) %>%
-#   mutate(date = date - hours(6))
-# 
-# # Ercot Actuals Pull ------------------------------------------------------
-# # Get ercot actuals (verification)
-# ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = max(E_nxtdaywnd$date, na.rm = TRUE) , hourly = "yes", return_sql = F) %>% 
-#   select(-c(REGIONORZONEID)) %>%
-#   mutate(date = date + hours(1))
-# 
-# colnames(ercot_actuals)[colnames(ercot_actuals) == "MW"] <- "Actuals"
-# 
-# 
-# # 3 Tier Data Pull --------------------------------------------------------
-# # Gets 3 tier's ERCOT forecast. The data comes in individual farms, so must sum it all to get Forecast for ERCOT total 
-# 
-# regions <- find_region() %>% filter(CAID==9) 
-# 
-# farms <- find_wind_farms(center_longitude = -103.06708, center_latitude = 31.27669, max_distance_from_center = 1000) %>% 
-#   filter(REGIONID %in% regions$REGIONID) %>% 
-#   filter(OBSOLETEDAT == "9999-12-31 00:00:00")
-# 
-# timeZone <- "US/Central"
-# 
-# data3tier <- query_wind_DA_fcast_3tier_by_region(start = ymd('2018-02-11'), end = today(), 67509) %>% 
-#   select(-c(SAMPLETIMESTAMP,POWERMW24)) %>% 
-#   gather(hour,mw,-c(REGIONID,MARKETDAY,FARMID,FARMNAME))%>% 
-#   mutate(hour = as.numeric(gsub("POWERMW","", hour)), date = ymd_h(paste(MARKETDAY, hour, sep = ":"), tz = timeZone)) %>% 
-#   select(-c(REGIONID,FARMID,MARKETDAY))
-# 
-# data3tier_sum <- data3tier %>% 
-#   group_by(date) %>% 
-#   summarize(`3tier` = sum(mw)) %>% 
-#   filter(date>ymd('2018-02-11')) %>% 
-#   filter(!is.na(`3tier`)) 
-# 
-# # Join tables -------------------------------------------------------------
-# # Join the data together
-# ercot_all <- data3tier_sum %>% 
-#   group_by(date) %>% 
-#   left_join(.,E_nxtdaywnd) %>% 
-#   left_join(., ercot_actuals) %>% 
-#   gather(type,mw,-date)
-# #filter(date>(start+1) & date<end)
-
-
 #----------------------------------------------------------------------------------
 
 server <- function(input, output, session) {
@@ -149,9 +25,9 @@ server <- function(input, output, session) {
   #MISO reactive data retrieval from master CSV and check to see if the file is up to date------------------------------------------------------
   #read in latest csvs
   
-  latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
+    latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
    # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
-                            range = cell_cols("A:E") , col_names = TRUE)
+                            range = cell_cols("A:F") , col_names = TRUE, col_types = c("date","numeric", "numeric", "numeric","numeric","numeric"))
   
   windmiso_actuals <- reactive({
     #check for max date
@@ -174,7 +50,7 @@ server <- function(input, output, session) {
         date <- paste0("20", date)
         x <- read_excel(sprintf("/data/rdata/rdatashare/weather/MISO_wind/Miso/%s", miso_wind), sheet = 2,
         # x <- read_excel(sprintf("Z://MISO_wind/Miso/%s", miso_wind), sheet = 2,
-                        range = "B2:J26" , col_names = TRUE) %>%
+                        range = "B2:K26" , col_names = TRUE) %>%
           mutate(date = date)
         output[[paste(gsub(".rds" , replacement = "", miso_wind))]] <- x
         
@@ -188,8 +64,7 @@ server <- function(input, output, session) {
       timezones <- data.frame(tz = OlsonNames())
       windmiso_two <- do.call(rbind, output) %>%
         mutate(date = ymd_h(paste0(date,":",LDT),tz = "US/Central") ) %>%
-        select(date, Sesco, '3 Tier', MDA, WSI) %>%
-        na.omit()
+        select(date, Sesco, '3 Tier', MDA, WSI, MISO)
       
       #rbind those csvs to master csv
       windmiso_new <- rbind(latest_miso, windmiso_two) %>%
@@ -203,7 +78,7 @@ server <- function(input, output, session) {
       # Load Miso data from master excel file
       # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
       latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
-                                range = cell_cols("A:E") , col_names = TRUE)
+                                range = cell_cols("A:F") , col_names = TRUE, col_types = c("date","numeric", "numeric", "numeric","numeric","numeric"))
       
       #changing the time from UTC to US/Central
       windmiso_actuals <- latest_miso %>%
@@ -219,7 +94,7 @@ server <- function(input, output, session) {
       # Load Miso data from master excel file
       # latest_miso <- read_excel("Z://MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
       latest_miso <- read_excel("/data/rdata/rdatashare/weather/MISO_wind/Miso/Master excel sheet/Master_miso.xlsx", sheet = 1,
-                                range = cell_cols("A:E") , col_names = TRUE)
+                                range = cell_cols("A:F") , col_names = TRUE, col_types = c("date","numeric", "numeric", "numeric","numeric","numeric"))
       
       #Changing the time from UTC to US/Central
       windmiso_actuals <- latest_miso %>%
@@ -254,7 +129,7 @@ server <- function(input, output, session) {
   #Join Miso actuals to the forecasted data
   miso_all <- reactive({
     left_join(windmiso_actuals(), miso_actuals()) %>%
-    group_by(date) %>%
+    #group_by(date) %>%
     gather(type,mw,-date)
   })
   #------------------------------------------------------------------------------------------------
@@ -496,7 +371,7 @@ server <- function(input, output, session) {
   # Ercot Actuals Pull ------------------------------------------------------
   # Get ercot actuals (verification)
   ercot_actuals <- reactive({
-  ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = as.Date(input$client_time) , hourly = "yes", return_sql = F) %>% 
+  ercot_actuals <- query_wind_mw_ercot_actuals(start = ymd("2018-3-12") , end = as.Date(input$client_time) , hourly = "yes", return_sql = F) %>% #as.Date(input$client_time) ymd("2019-03-14")
     select(-c(REGIONORZONEID)) %>%
     mutate(date = date + hours(1))
   
@@ -580,8 +455,9 @@ server <- function(input, output, session) {
       mutate('3 Tier' = abs(Actuals -vaisala),
              Sesco = abs(Actuals - Sesco),
              MDA = abs(Actuals - MDA),
-             WSI = abs(Actuals - WSI)) %>%  
-      select(date, Sesco, '3 Tier', WSI, MDA) %>% 
+             WSI = abs(Actuals - WSI),
+             MISO = abs(Actuals - MISO)) %>%  
+      select(date, Sesco, '3 Tier', WSI, MDA, MISO) %>% 
       gather(type,mw,-date) %>% 
       #filter(date>start & date<end) %>% 
       filter(!is.na(mw)) %>% 
@@ -602,8 +478,9 @@ server <- function(input, output, session) {
       mutate('3 Tier' = abs(Actuals -vaisala),
              Sesco = abs(Actuals - Sesco),
              MDA = abs(Actuals - MDA),
-             WSI = abs(Actuals - WSI)) %>%  
-      select(date, Sesco, '3 Tier', WSI, MDA) %>% 
+             WSI = abs(Actuals - WSI),
+             MISO = abs(Actuals - MISO)) %>%  
+      select(date, Sesco, '3 Tier', WSI, MDA, MISO) %>% 
       gather(type,mw,-date) %>% 
       #filter(date>start & date<end) %>% 
       filter(!is.na(mw)) %>% 
@@ -754,6 +631,7 @@ server <- function(input, output, session) {
     
   })
   
+  # creates a data table with only actual data 
   # output$viewercot <- DT::renderDataTable({
   #   DT::datatable(ercot_actuals_table())
   # })
